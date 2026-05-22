@@ -20,18 +20,60 @@ A Streamlit dashboard that ingests job listings from CSV files and tracks applic
    uv sync
    ```
 
-## Running the app
+## Running persistently with tmux
 
+Use tmux so both processes keep running after you disconnect from SSH.
+
+**Terminal 1 — watcher:**
 ```bash
-uv run streamlit run src/app.py      # dashboard at localhost:8501
-uv run python -m src.watcher         # watches downloads/ for new CSVs
+tmux new -s watcher
+uv run python -m src.watcher
+# Ctrl+B then D to detach
 ```
 
-Start the watcher first if you have CSVs ready — it processes any existing files in `downloads/` on startup before switching to live watching.
+**Terminal 2 — Streamlit:**
+```bash
+tmux new -s streamlit
+uv run streamlit run src/app.py --server.address 0.0.0.0
+# Ctrl+B then D to detach
+```
 
-## Adding jobs
+To reattach later:
+```bash
+tmux attach -t watcher
+tmux attach -t streamlit
+```
 
-Drop a `.csv` file into `downloads/`. The watcher picks it up within a couple of seconds and ingests it into Postgres. Required columns:
+To see all running sessions: `tmux ls`
+
+## Accessing the dashboard
+
+From your local machine, open an SSH tunnel:
+```bash
+ssh -L 8501:localhost:8501 siwa@your-server-ip
+```
+
+Then open `http://localhost:8501` in your browser.
+
+## Adding jobs from an email
+
+When you receive an email with a jobs CSV attachment:
+
+1. Save the CSV to your local machine
+2. Upload it to the server:
+   ```bash
+   scp jobs.csv siwa@your-server-ip:~/automated-jobs-pipeline/downloads/
+   ```
+3. The watcher picks it up within a few seconds and ingests it into Postgres — no further action needed.
+
+For multiple files at once:
+```bash
+rsync -av *.csv siwa@your-server-ip:~/automated-jobs-pipeline/downloads/
+```
+
+## CSV format
+
+Required columns:
 
 | Column | Notes |
 |---|---|

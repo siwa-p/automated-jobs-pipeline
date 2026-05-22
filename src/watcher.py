@@ -9,7 +9,7 @@ import threading
 import time
 from pathlib import Path
 
-from watchdog.events import FileCreatedEvent, FileModifiedEvent, FileSystemEventHandler
+from watchdog.events import FileCreatedEvent, FileModifiedEvent, FileMovedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from src.database import engine, init_db
@@ -86,6 +86,12 @@ class CsvHandler(FileSystemEventHandler):
 
     def on_modified(self, event: FileModifiedEvent) -> None:
         self._handle(event)
+
+    def on_moved(self, event: FileMovedEvent) -> None:
+        # rsync writes a temp file then renames — dest_path is the final filename
+        path = Path(event.dest_path)
+        if not event.is_directory and path.suffix.lower() == ".csv":
+            self._ingest(path)
 
 
 def process_existing(watch_dir: Path) -> None:

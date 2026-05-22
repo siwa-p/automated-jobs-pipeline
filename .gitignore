@@ -6,3 +6,4 @@ __pycache__/
 .stfolder/
 .claude/
 .vscode/
+sync_downloads.sh
