@@ -49,52 +49,40 @@ def _ensure_db():
 _ensure_db()
 
 
-def fetch_jobs(statuses: list[str] | None = None, min_score: float = 0) -> pd.DataFrame:
-    clauses = ["1=1"]
-    params: dict = {}
-
-    if statuses:
-        clauses.append("status::text = ANY(:statuses)")
-        params["statuses"] = statuses
-
-    if min_score:
-        clauses.append("relevance_score >= :min_score")
-        params["min_score"] = min_score
-
-    sql = f"""
+@st.cache_data(ttl=60)
+def _fetch_all_jobs_raw() -> pd.DataFrame:
+    """Single cached DB fetch; all filters applied in Python."""
+    sql = """
         SELECT id, title, company, location, date_posted, relevance_score,
                job_url, description, flagged, entry_level, experience_req,
                status, notes, ingested_at, applied_at
         FROM jobs
-        WHERE {" AND ".join(clauses)}
         ORDER BY relevance_score DESC NULLS LAST
     """
     with engine.connect() as conn:
-        return pd.read_sql(text(sql), conn, params=params)
+        return pd.read_sql(text(sql), conn)
+
+
+def fetch_jobs(statuses: list[str] | None = None, min_score: float = 0) -> pd.DataFrame:
+    df = _fetch_all_jobs_raw()
+    if statuses:
+        df = df[df["status"].isin(statuses)]
+    if min_score:
+        df = df[df["relevance_score"] >= min_score]
+    return df
 
 
 def fetch_job_by_id(job_id: int) -> pd.Series | None:
-    with engine.connect() as conn:
-        df = pd.read_sql(
-            text("""
-                SELECT id, title, company, location, date_posted, relevance_score,
-                       job_url, description, flagged, entry_level, experience_req,
-                       status, notes, ingested_at, applied_at
-                FROM jobs WHERE id = :id
-            """),
-            conn,
-            params={"id": job_id},
-        )
-    return df.iloc[0] if not df.empty else None
+    df = _fetch_all_jobs_raw()
+    row = df[df["id"] == job_id]
+    return row.iloc[0] if not row.empty else None
 
 
 def fetch_stats() -> dict:
-    with engine.connect() as conn:
-        df = pd.read_sql(
-            text("SELECT status, count(*) as cnt FROM jobs GROUP BY status"), conn
-        )
-    stats = {row.status: int(row.cnt) for row in df.itertuples()}
-    stats["total"] = sum(stats.values())
+    df = _fetch_all_jobs_raw()
+    stats = df["status"].value_counts().to_dict()
+    stats = {k: int(v) for k, v in stats.items()}
+    stats["total"] = len(df)
     return stats
 
 
@@ -105,6 +93,7 @@ def update_status(job_id: int, new_status: str) -> None:
             text(f"UPDATE jobs SET status = :status{applied_clause} WHERE id = :id"),
             {"status": new_status, "id": job_id},
         )
+    _fetch_all_jobs_raw.clear()
 
 
 def update_notes(job_id: int, notes: str) -> None:
@@ -113,6 +102,7 @@ def update_notes(job_id: int, notes: str) -> None:
             text("UPDATE jobs SET notes = :notes WHERE id = :id"),
             {"notes": notes, "id": job_id},
         )
+    _fetch_all_jobs_raw.clear()
 
 
 def update_experience_req(job_id: int, value: str | None) -> None:
@@ -121,11 +111,13 @@ def update_experience_req(job_id: int, value: str | None) -> None:
             text("UPDATE jobs SET experience_req = :value WHERE id = :id"),
             {"value": value or None, "id": job_id},
         )
+    _fetch_all_jobs_raw.clear()
 
 
 def delete_job(job_id: int) -> None:
     with engine.begin() as conn:
         conn.execute(text("DELETE FROM jobs WHERE id = :id"), {"id": job_id})
+    _fetch_all_jobs_raw.clear()
 
 
 def insert_job(title: str, company: str, location: str, job_url: str,
@@ -152,6 +144,7 @@ def insert_job(title: str, company: str, location: str, job_url: str,
             "experience_req": experience_req or None,
             "score": score,
         })
+    _fetch_all_jobs_raw.clear()
 
 
 def _compute_score(title: str, description: str) -> float | None:
@@ -795,8 +788,9 @@ with page_analytics:
                 "required","requirements","preferred","plus","strong","excellent",
             }
 
-            def top_terms(texts, n=20):
-                corpus = [str(t) for t in texts if t and str(t).strip()]
+            @st.cache_data(ttl=120)
+            def top_terms(texts_tuple, n=20):
+                corpus = [str(t) for t in texts_tuple if t and str(t).strip()]
                 if not corpus:
                     return pd.DataFrame(columns=["term", "count"])
                 vec = CountVectorizer(
@@ -826,12 +820,12 @@ with page_analytics:
             cb4a, cb4b = st.columns(2)
             with cb4a:
                 st.markdown("**Title keywords — callbacks**")
-                t_cb = top_terms(df_cb["title"])
+                t_cb = top_terms(tuple(df_cb["title"]))
                 if not t_cb.empty:
                     st.altair_chart(term_chart(t_cb, "#55A868"), width="stretch")
             with cb4b:
                 st.markdown("**Title keywords — no callback**")
-                t_no = top_terms(df_no["title"])
+                t_no = top_terms(tuple(df_no["title"]))
                 if not t_no.empty:
                     st.altair_chart(term_chart(t_no, "#C44E52"), width="stretch")
 
@@ -841,12 +835,12 @@ with page_analytics:
             cb5a, cb5b = st.columns(2)
             with cb5a:
                 st.markdown("**Description keywords — callbacks**")
-                d_cb = top_terms(df_cb["description"].dropna(), n=25)
+                d_cb = top_terms(tuple(df_cb["description"].dropna()), n=25)
                 if not d_cb.empty:
                     st.altair_chart(term_chart(d_cb, "#55A868", height=380), width="stretch")
             with cb5b:
                 st.markdown("**Description keywords — no callback**")
-                d_no = top_terms(df_no["description"].dropna(), n=25)
+                d_no = top_terms(tuple(df_no["description"].dropna()), n=25)
                 if not d_no.empty:
                     st.altair_chart(term_chart(d_no, "#C44E52", height=380), width="stretch")
 
