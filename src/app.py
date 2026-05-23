@@ -719,7 +719,7 @@ with page_analytics:
                 .reset_index()
             )
             loc_summary = loc_summary[loc_summary["applied"] >= 2]  # need at least 2 to be meaningful
-            loc_summary["rate"] = (loc_summary["callbacks"] / loc_summary["applied"] * 100).round(1)
+            loc_summary["rate"] = (loc_summary["callbacks"].astype(float) / loc_summary["applied"].astype(float) * 100).round(1)
             loc_summary = loc_summary.sort_values("rate", ascending=False).head(15)
 
             if loc_summary.empty:
