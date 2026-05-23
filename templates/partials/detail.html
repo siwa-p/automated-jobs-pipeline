@@ -1,15 +1,15 @@
 <div>
   {# Header #}
   <div class="mb-4">
-    <h2 class="font-semibold text-base text-gray-900 leading-snug">{{ job.title }}</h2>
-    <p class="text-gray-600 text-sm mt-0.5">{{ job.company }} &middot; {{ job.location or "—" }}</p>
-    <p class="text-xs text-gray-400 mt-1">
+    <h2 class="font-semibold text-base text-gray-900 dark:text-gray-100 leading-snug">{{ job.title }}</h2>
+    <p class="text-gray-600 dark:text-gray-400 text-sm mt-0.5">{{ job.company }} &middot; {{ job.location or "—" }}</p>
+    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
       Posted: {{ job.date_posted or "—" }} &middot;
       Score: {{ "%.1f" | format(job.relevance_score) if job.relevance_score is not none else "—" }} &middot;
       {{ status_emoji.get(job.status, "") }} {{ job.status.replace('_', ' ').title() }}
     </p>
     {% if job.applied_at %}
-    <p class="text-xs text-gray-400">Applied: {{ job.applied_at }}</p>
+    <p class="text-xs text-gray-400 dark:text-gray-500">Applied: {{ job.applied_at }}</p>
     {% endif %}
   </div>
 
@@ -20,47 +20,53 @@
       Apply Now ↗
     </a>
     <button
-      class="text-xs border border-red-300 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded"
+      class="text-xs border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400
+             hover:bg-red-50 dark:hover:bg-red-900/30 px-3 py-1.5 rounded"
       hx-delete="/jobs/{{ job.id }}"
       hx-target="#job-{{ job.id }}"
       hx-swap="outerHTML"
       hx-confirm="Delete this job posting permanently?"
-      hx-on::after-request="if(event.detail.successful){ document.getElementById('detail-panel').innerHTML = '<p class=&quot;text-gray-400 text-sm&quot;>Click <strong>Detail</strong> on any job.</p>' }"
+      hx-on::after-request="if(event.detail.successful){ document.getElementById('detail-panel').innerHTML = '<p class=&quot;text-gray-400 dark:text-gray-500 text-sm&quot;>Click <strong>Detail</strong> on any job.</p>' }"
     >
       Discard
     </button>
   </div>
 
-  <hr class="border-gray-100 mb-4">
+  <hr class="border-gray-100 dark:border-gray-700 mb-4">
 
   {# Notes #}
   <form hx-patch="/jobs/{{ job.id }}/notes"
         hx-target="#notes-save-status"
         hx-swap="innerHTML">
-    <label class="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Notes</label>
     <textarea
       name="notes"
       rows="5"
-      class="w-full text-sm border border-gray-200 rounded p-2 resize-none focus:outline-none focus:border-blue-400"
+      class="w-full text-sm border border-gray-200 dark:border-gray-600 rounded p-2 resize-none
+             bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+             placeholder-gray-400 dark:placeholder-gray-500
+             focus:outline-none focus:border-blue-400"
       placeholder="Interview notes, contacts, follow-up dates…"
     >{{ job.notes or '' }}</textarea>
     <div class="flex items-center gap-2 mt-1">
       <button type="submit"
-              class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded">
+              class="text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600
+                     dark:text-gray-300 px-3 py-1 rounded">
         Save Notes
       </button>
-      <span id="notes-save-status" class="text-xs text-gray-400"></span>
+      <span id="notes-save-status" class="text-xs text-gray-400 dark:text-gray-500"></span>
     </div>
   </form>
 
   {% if job.description %}
-  <hr class="border-gray-100 my-4">
+  <hr class="border-gray-100 dark:border-gray-700 my-4">
   <details>
-    <summary class="text-xs font-medium text-gray-600 cursor-pointer select-none">
+    <summary class="text-xs font-medium text-gray-600 dark:text-gray-400 cursor-pointer select-none">
       Job Description
     </summary>
-    <div class="mt-2 text-xs text-gray-700 leading-relaxed whitespace-pre-wrap
-                border border-gray-100 rounded p-2 bg-gray-50">
+    <div class="mt-2 text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap
+                border border-gray-100 dark:border-gray-700 rounded p-2
+                bg-gray-50 dark:bg-gray-900">
       {{ job.description }}
     </div>
   </details>

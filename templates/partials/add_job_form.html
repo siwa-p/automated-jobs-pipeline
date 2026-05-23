@@ -1,5 +1,5 @@
 <div>
-  <h2 class="font-semibold text-base text-gray-900 mb-4">Add a Job</h2>
+  <h2 class="font-semibold text-base text-gray-900 dark:text-gray-100 mb-4">Add a Job</h2>
 
   <form
     hx-post="/jobs"
@@ -7,48 +7,46 @@
     hx-swap="innerHTML"
     hx-on::after-request="if(event.detail.successful) this.reset()"
   >
+    {% set input_cls = "w-full text-sm border border-gray-200 dark:border-gray-600 rounded px-2 py-1.5
+                        bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                        focus:outline-none focus:border-blue-400" %}
+    {% set label_cls = "block text-xs text-gray-500 dark:text-gray-400 mb-0.5" %}
+
     <div class="grid grid-cols-2 gap-2 mb-3">
       <div>
-        <label class="block text-xs text-gray-500 mb-0.5">Title *</label>
-        <input name="title" required
-               class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-blue-400">
+        <label class="{{ label_cls }}">Title *</label>
+        <input name="title" required class="{{ input_cls }}">
       </div>
       <div>
-        <label class="block text-xs text-gray-500 mb-0.5">Company *</label>
-        <input name="company" required
-               class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-blue-400">
+        <label class="{{ label_cls }}">Company *</label>
+        <input name="company" required class="{{ input_cls }}">
       </div>
     </div>
 
     <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-0.5">Job URL *</label>
-      <input name="job_url" required type="url"
-             class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-blue-400">
+      <label class="{{ label_cls }}">Job URL *</label>
+      <input name="job_url" required type="url" class="{{ input_cls }}">
     </div>
 
     <div class="grid grid-cols-2 gap-2 mb-3">
       <div>
-        <label class="block text-xs text-gray-500 mb-0.5">Location</label>
-        <input name="location"
-               class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-blue-400">
+        <label class="{{ label_cls }}">Location</label>
+        <input name="location" class="{{ input_cls }}">
       </div>
       <div>
-        <label class="block text-xs text-gray-500 mb-0.5">Date Posted</label>
-        <input name="date_posted" type="date"
-               class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-blue-400">
+        <label class="{{ label_cls }}">Date Posted</label>
+        <input name="date_posted" type="date" class="{{ input_cls }}">
       </div>
     </div>
 
     <div class="grid grid-cols-2 gap-2 mb-3">
       <div>
-        <label class="block text-xs text-gray-500 mb-0.5">Experience req</label>
-        <input name="experience_req" placeholder="e.g. 2–4 yrs"
-               class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-blue-400">
+        <label class="{{ label_cls }}">Experience req</label>
+        <input name="experience_req" placeholder="e.g. 2–4 yrs" class="{{ input_cls }}">
       </div>
       <div>
-        <label class="block text-xs text-gray-500 mb-0.5">Status</label>
-        <select name="status"
-                class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-blue-400">
+        <label class="{{ label_cls }}">Status</label>
+        <select name="status" class="{{ input_cls }}">
           {% for s in statuses %}
           <option value="{{ s }}" {{ 'selected' if s == 'applied' else '' }}>
             {{ status_emoji[s] }} {{ s.replace('_', ' ').title() }}
@@ -59,23 +57,20 @@
     </div>
 
     <div class="mb-3">
-      <label class="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
-        <input name="entry_level" type="checkbox" value="true"
-               class="rounded border-gray-300">
+      <label class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
+        <input name="entry_level" type="checkbox" value="true" class="rounded border-gray-300 dark:border-gray-600">
         Entry-level role
       </label>
     </div>
 
     <div class="mb-3">
-      <label class="block text-xs text-gray-500 mb-0.5">Description</label>
-      <textarea name="description" rows="3"
-                class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 resize-none focus:outline-none focus:border-blue-400"></textarea>
+      <label class="{{ label_cls }}">Description</label>
+      <textarea name="description" rows="3" class="{{ input_cls }} resize-none"></textarea>
     </div>
 
     <div class="mb-4">
-      <label class="block text-xs text-gray-500 mb-0.5">Notes</label>
-      <textarea name="notes" rows="2"
-                class="w-full text-sm border border-gray-200 rounded px-2 py-1.5 resize-none focus:outline-none focus:border-blue-400"></textarea>
+      <label class="{{ label_cls }}">Notes</label>
+      <textarea name="notes" rows="2" class="{{ input_cls }} resize-none"></textarea>
     </div>
 
     <button type="submit"

@@ -130,9 +130,9 @@ async def jobs_list(
     request: Request,
     status: str = "new",
     min_score: float = 0,
-    days: Optional[int] = None,
+    days: Optional[str] = None,
 ):
-    jobs = get_jobs(_tab_statuses(status), min_score=min_score, days=days)
+    jobs = get_jobs(_tab_statuses(status), min_score=min_score, days=int(days) if days else None)
     return _tmpl("partials/job_list.html", request, {
         "jobs": jobs,
         "current_tab": status,

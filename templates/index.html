@@ -4,28 +4,32 @@
 <div class="flex h-screen overflow-hidden">
 
   {# ── Sidebar ──────────────────────────────────────────────────────────── #}
-  <aside id="sidebar" class="w-44 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col p-3 gap-4">
+  <aside id="sidebar" class="w-44 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200
+                              dark:border-gray-700 flex flex-col p-3 gap-4">
     <div class="flex items-center justify-between">
       <h1 class="font-bold text-base leading-tight">💼 Jobs Tracker</h1>
       <button onclick="toggleSidebar()" title="Hide sidebar"
-              class="text-gray-400 hover:text-gray-600 text-lg leading-none">‹</button>
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg leading-none">‹</button>
     </div>
 
     <div>
-      <label class="block text-xs text-gray-500 mb-1">Min Score</label>
+      <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Min Score</label>
       <input
         type="range" id="min-score" name="min_score"
         min="0" max="100" value="0"
         class="w-full accent-blue-600"
         oninput="document.getElementById('score-val').textContent = this.value"
+        hx-get="/jobs" hx-target="#job-list" hx-trigger="change"
+        hx-include="#active-tab,#time-window"
       >
-      <span id="score-val" class="text-xs text-gray-500">0</span>
+      <span id="score-val" class="text-xs text-gray-500 dark:text-gray-400">0</span>
     </div>
 
     <div>
-      <label class="block text-xs text-gray-500 mb-1">Ingested within</label>
+      <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Ingested within</label>
       <select id="time-window" name="days"
-              class="w-full text-xs border border-gray-200 rounded px-2 py-1"
+              class="w-full text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1
+                     bg-white dark:bg-gray-700 dark:text-gray-100"
               hx-get="/jobs" hx-target="#job-list" hx-trigger="change"
               hx-include="#active-tab,#min-score">
         <option value="">All time</option>
@@ -36,13 +40,20 @@
       </select>
     </div>
 
-    <button class="text-xs bg-gray-100 hover:bg-gray-200 rounded py-1 w-full"
+    <button class="text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600
+                   dark:text-gray-300 rounded py-1 w-full"
             hx-get="/jobs" hx-target="#job-list" hx-trigger="click"
             hx-include="#active-tab,#min-score,#time-window">
       🔄 Refresh
     </button>
 
-    <div class="mt-auto">
+    <div class="mt-auto flex flex-col gap-2">
+      <button id="dark-toggle"
+              onclick="toggleDark()"
+              class="text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600
+                     dark:text-gray-300 rounded py-1 w-full">
+        🌙 Dark mode
+      </button>
       <button class="text-xs bg-blue-600 hover:bg-blue-700 text-white rounded py-1.5 w-full"
               hx-get="/add-job-form" hx-target="#detail-panel" hx-swap="innerHTML">
         ➕ Add Job
@@ -51,10 +62,10 @@
   </aside>
 
   {# Collapsed sidebar rail #}
-  <div id="sidebar-rail" class="hidden w-8 flex-shrink-0 bg-white border-r border-gray-200
-                                flex flex-col items-center pt-3">
+  <div id="sidebar-rail" class="hidden w-8 flex-shrink-0 bg-white dark:bg-gray-800 border-r
+                                border-gray-200 dark:border-gray-700 flex flex-col items-center pt-3">
     <button onclick="toggleSidebar()" title="Show sidebar"
-            class="text-gray-400 hover:text-gray-600 text-lg">›</button>
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg">›</button>
   </div>
 
   {# ── Main area ─────────────────────────────────────────────────────────── #}
@@ -74,13 +85,16 @@
       <div class="flex flex-col flex-1 overflow-hidden">
 
         {# Tab bar #}
-        <div class="flex bg-white border-b border-gray-200 px-2 pt-2 gap-0.5 flex-wrap" id="tab-bar">
+        <div class="flex bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700
+                    px-2 pt-2 gap-0.5 flex-wrap" id="tab-bar">
           {% for tab_key, tab_label in tab_defs %}
           <button
             id="tab-{{ tab_key }}"
             class="tab-btn px-3 py-1.5 text-xs rounded-t-md border border-b-0 border-transparent
-                   {% if active_tab == tab_key %}bg-white border-gray-300 font-medium text-gray-900
-                   {% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-50{% endif %}"
+                   {% if active_tab == tab_key %}bg-white dark:bg-gray-900 border-gray-300
+                   dark:border-gray-600 font-medium text-gray-900 dark:text-gray-100
+                   {% else %}text-gray-500 dark:text-gray-400 hover:text-gray-700
+                   dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}"
             hx-get="/jobs?status={{ tab_key }}"
             hx-target="#job-list"
             hx-include="#min-score,#time-window"
@@ -104,15 +118,16 @@
 
       {# Drag handle #}
       <div id="drag-handle"
-           class="w-1.5 flex-shrink-0 bg-gray-200 hover:bg-blue-400 cursor-col-resize
-                  active:bg-blue-500 transition-colors">
+           class="w-1.5 flex-shrink-0 bg-gray-200 dark:bg-gray-700 hover:bg-blue-400
+                  dark:hover:bg-blue-500 cursor-col-resize transition-colors">
       </div>
 
       {# Right: detail panel #}
       <div id="detail-panel"
-           class="flex-shrink-0 bg-white border-l border-gray-200 overflow-y-auto p-4"
+           class="flex-shrink-0 bg-white dark:bg-gray-800 border-l border-gray-200
+                  dark:border-gray-700 overflow-y-auto p-4"
            style="width: 24rem">
-        <p class="text-gray-400 text-sm">Click <strong>Detail</strong> on any job.</p>
+        <p class="text-gray-400 dark:text-gray-500 text-sm">Click <strong>Detail</strong> on any job.</p>
       </div>
     </div>
   </div>
@@ -123,11 +138,13 @@
 function activateTab(key, btn) {
   document.getElementById('active-tab').value = key;
   document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('bg-white', 'border-gray-300', 'font-medium', 'text-gray-900');
-    b.classList.add('text-gray-500', 'border-transparent');
+    b.classList.remove('bg-white', 'dark:bg-gray-900', 'border-gray-300', 'dark:border-gray-600',
+                       'font-medium', 'text-gray-900', 'dark:text-gray-100');
+    b.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
   });
-  btn.classList.add('bg-white', 'border-gray-300', 'font-medium', 'text-gray-900');
-  btn.classList.remove('text-gray-500', 'border-transparent');
+  btn.classList.add('bg-white', 'dark:bg-gray-900', 'border-gray-300', 'dark:border-gray-600',
+                    'font-medium', 'text-gray-900', 'dark:text-gray-100');
+  btn.classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
 }
 
 function toggleSidebar() {
@@ -136,6 +153,19 @@ function toggleSidebar() {
   sidebar.classList.toggle('hidden');
   rail.classList.toggle('hidden');
 }
+
+function toggleDark() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  document.getElementById('dark-toggle').textContent = isDark ? '☀️ Light mode' : '🌙 Dark mode';
+}
+
+// Sync toggle label on load
+(function () {
+  if (document.documentElement.classList.contains('dark')) {
+    document.getElementById('dark-toggle').textContent = '☀️ Light mode';
+  }
+})();
 
 (function () {
   const handle = document.getElementById('drag-handle');

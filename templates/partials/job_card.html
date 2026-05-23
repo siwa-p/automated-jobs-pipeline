@@ -1,20 +1,21 @@
 <div id="job-{{ job.id }}"
-     class="job-card bg-white border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+     class="job-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+            rounded-lg p-3 hover:shadow-sm transition-shadow">
 
   {# Top row: title / company / location / score #}
   <div class="flex items-start gap-3 mb-2">
     <div class="flex-1 min-w-0">
-      <div class="font-medium text-gray-900 truncate">
+      <div class="font-medium text-gray-900 dark:text-gray-100 truncate">
         {% if job.flagged %}⭐ {% endif %}{{ job.title }}
-        <span class="font-normal text-gray-500"> — {{ job.company }}</span>
+        <span class="font-normal text-gray-500 dark:text-gray-400"> — {{ job.company }}</span>
       </div>
-      <div class="text-xs text-gray-400 mt-0.5">
+      <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
         {{ job.location or "—" }} &middot; posted {{ job.date_posted or "—" }}
       </div>
     </div>
     <div class="flex-shrink-0 text-right">
-      <div class="text-xs text-gray-400">Score</div>
-      <div class="font-semibold text-gray-800">
+      <div class="text-xs text-gray-400 dark:text-gray-500">Score</div>
+      <div class="font-semibold text-gray-800 dark:text-gray-200">
         {{ "%.1f" | format(job.relevance_score) if job.relevance_score is not none else "—" }}
       </div>
     </div>
@@ -23,13 +24,16 @@
   {# Bottom row: controls #}
   <div class="flex items-center gap-2 flex-wrap">
 
-    {# Experience req — blur triggers update #}
+    {# Experience req #}
     <input
       type="text"
       name="experience_req"
       value="{{ job.experience_req or '' }}"
       placeholder="Exp req"
-      class="text-xs border border-gray-200 rounded px-2 py-1 w-24 focus:outline-none focus:border-blue-400"
+      class="text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1 w-24
+             bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+             placeholder-gray-400 dark:placeholder-gray-500
+             focus:outline-none focus:border-blue-400"
       hx-patch="/jobs/{{ job.id }}/experience"
       hx-trigger="blur changed"
       hx-target="#job-{{ job.id }}"
@@ -40,18 +44,21 @@
 
     {# Entry badge #}
     {% if job.entry_level %}
-    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex-shrink-0">Entry</span>
+    <span class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300
+                 px-2 py-0.5 rounded-full flex-shrink-0">Entry</span>
     {% endif %}
 
     {# Ingested date #}
-    <span class="text-xs text-gray-400 flex-shrink-0">
+    <span class="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
       📥 {% if job.ingested_at %}{{ job.ingested_at.strftime('%b %d') if job.ingested_at.__class__.__name__ != 'str' else job.ingested_at[:10] }}{% else %}—{% endif %}
     </span>
 
-    {# Status select — change triggers update #}
+    {# Status select #}
     <select
       name="status"
-      class="text-xs border border-gray-200 rounded px-2 py-1 flex-1 min-w-0 focus:outline-none focus:border-blue-400"
+      class="text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1 flex-1 min-w-0
+             bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+             focus:outline-none focus:border-blue-400"
       hx-patch="/jobs/{{ job.id }}/status"
       hx-trigger="change"
       hx-target="#job-{{ job.id }}"
@@ -74,7 +81,9 @@
 
     {# Detail button #}
     <button
-      class="flex-shrink-0 text-xs border border-gray-300 hover:bg-gray-50 px-3 py-1 rounded"
+      class="flex-shrink-0 text-xs border border-gray-300 dark:border-gray-600
+             hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300
+             px-3 py-1 rounded"
       hx-get="/jobs/{{ job.id }}"
       hx-target="#detail-panel"
       hx-swap="innerHTML"
