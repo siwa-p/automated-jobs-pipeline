@@ -4,8 +4,12 @@
 <div class="flex h-screen overflow-hidden">
 
   {# ── Sidebar ──────────────────────────────────────────────────────────── #}
-  <aside class="w-44 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col p-3 gap-4">
-    <h1 class="font-bold text-base leading-tight">💼 Jobs Tracker</h1>
+  <aside id="sidebar" class="w-44 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col p-3 gap-4">
+    <div class="flex items-center justify-between">
+      <h1 class="font-bold text-base leading-tight">💼 Jobs Tracker</h1>
+      <button onclick="toggleSidebar()" title="Hide sidebar"
+              class="text-gray-400 hover:text-gray-600 text-lg leading-none">‹</button>
+    </div>
 
     <div>
       <label class="block text-xs text-gray-500 mb-1">Min Score</label>
@@ -45,6 +49,13 @@
       </button>
     </div>
   </aside>
+
+  {# Collapsed sidebar rail #}
+  <div id="sidebar-rail" class="hidden w-8 flex-shrink-0 bg-white border-r border-gray-200
+                                flex flex-col items-center pt-3">
+    <button onclick="toggleSidebar()" title="Show sidebar"
+            class="text-gray-400 hover:text-gray-600 text-lg">›</button>
+  </div>
 
   {# ── Main area ─────────────────────────────────────────────────────────── #}
   <div class="flex-1 flex flex-col overflow-hidden">
@@ -110,6 +121,13 @@ function activateTab(key, btn) {
   });
   btn.classList.add('bg-white', 'border-gray-300', 'font-medium', 'text-gray-900');
   btn.classList.remove('text-gray-500', 'border-transparent');
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const rail = document.getElementById('sidebar-rail');
+  sidebar.classList.toggle('hidden');
+  rail.classList.toggle('hidden');
 }
 </script>
 
