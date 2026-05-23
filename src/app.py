@@ -224,7 +224,7 @@ def render_job_card(row: pd.Series, key_prefix: str = "") -> None:
         with col_exp:
             new_exp = st.text_input(
                 "Exp",
-                value=row.get("experience_req") or "",
+                value=str(row["experience_req"]) if pd.notna(row.get("experience_req")) else "",
                 key=f"exp_{row.id}",
                 placeholder="e.g. 2-4 yrs",
                 label_visibility="collapsed",
@@ -377,7 +377,7 @@ def render_detail_panel() -> None:
     st.divider()
     note_key = f"notes_{selected_id}"
     if note_key not in st.session_state:
-        st.session_state[note_key] = row.notes or ""
+        st.session_state[note_key] = str(row.notes) if pd.notna(row.notes) else ""
     notes = st.text_area(
         "Notes",
         key=note_key,
