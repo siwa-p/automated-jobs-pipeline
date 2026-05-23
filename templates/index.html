@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex h-screen overflow-hidden">
+
+  {# ── Sidebar ──────────────────────────────────────────────────────────── #}
+  <aside class="w-44 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col p-3 gap-4">
+    <h1 class="font-bold text-base leading-tight">💼 Jobs Tracker</h1>
+
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Min Score</label>
+      <input
+        type="range" id="min-score" name="min_score"
+        min="0" max="100" value="0"
+        class="w-full accent-blue-600"
+        oninput="document.getElementById('score-val').textContent = this.value"
+      >
+      <span id="score-val" class="text-xs text-gray-500">0</span>
+    </div>
+
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Ingested within</label>
+      <select id="time-window" name="days"
+              class="w-full text-xs border border-gray-200 rounded px-2 py-1"
+              hx-get="/jobs" hx-target="#job-list" hx-trigger="change"
+              hx-include="#active-tab,#min-score">
+        <option value="">All time</option>
+        <option value="2">Last 2 days</option>
+        <option value="7">Last 7 days</option>
+        <option value="14">Last 14 days</option>
+        <option value="30">Last 30 days</option>
+      </select>
+    </div>
+
+    <button class="text-xs bg-gray-100 hover:bg-gray-200 rounded py-1 w-full"
+            hx-get="/jobs" hx-target="#job-list" hx-trigger="click"
+            hx-include="#active-tab,#min-score,#time-window">
+      🔄 Refresh
+    </button>
+
+    <div class="mt-auto">
+      <button class="text-xs bg-blue-600 hover:bg-blue-700 text-white rounded py-1.5 w-full"
+              hx-get="/add-job-form" hx-target="#detail-panel" hx-swap="innerHTML">
+        ➕ Add Job
+      </button>
+    </div>
+  </aside>
+
+  {# ── Main area ─────────────────────────────────────────────────────────── #}
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    {# Stats bar #}
+    <div id="stats-bar"
+         hx-get="/stats" hx-trigger="every 60s, statsChanged from:body"
+         hx-swap="innerHTML">
+      {% include "partials/stats.html" %}
+    </div>
+
+    {# Tabs + list + detail #}
+    <div class="flex flex-1 overflow-hidden">
+
+      {# Left: tabs + job list #}
+      <div class="flex flex-col flex-1 overflow-hidden">
+
+        {# Tab bar #}
+        <div class="flex bg-white border-b border-gray-200 px-2 pt-2 gap-0.5 flex-wrap" id="tab-bar">
+          {% for tab_key, tab_label in tab_defs %}
+          <button
+            id="tab-{{ tab_key }}"
+            class="tab-btn px-3 py-1.5 text-xs rounded-t-md border border-b-0 border-transparent
+                   {% if active_tab == tab_key %}bg-white border-gray-300 font-medium text-gray-900
+                   {% else %}text-gray-500 hover:text-gray-700 hover:bg-gray-50{% endif %}"
+            hx-get="/jobs?status={{ tab_key }}"
+            hx-target="#job-list"
+            hx-include="#min-score,#time-window"
+            hx-trigger="click"
+            onclick="activateTab('{{ tab_key }}', this)"
+          >{{ tab_label }}</button>
+          {% endfor %}
+        </div>
+
+        {# Hidden input tracks active tab for filter-triggered refreshes #}
+        <input type="hidden" id="active-tab" name="status" value="{{ active_tab }}">
+
+        {# Job list #}
+        <div id="job-list"
+             class="flex-1 overflow-y-auto p-3 space-y-2"
+             hx-get="/jobs" hx-trigger="refreshList from:body"
+             hx-include="#active-tab,#min-score,#time-window">
+          {% include "partials/job_list.html" %}
+        </div>
+      </div>
+
+      {# Right: detail panel #}
+      <div id="detail-panel"
+           class="w-96 flex-shrink-0 bg-white border-l border-gray-200 overflow-y-auto p-4">
+        <p class="text-gray-400 text-sm">Click <strong>Detail</strong> on any job.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function activateTab(key, btn) {
+  document.getElementById('active-tab').value = key;
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('bg-white', 'border-gray-300', 'font-medium', 'text-gray-900');
+    b.classList.add('text-gray-500', 'border-transparent');
+  });
+  btn.classList.add('bg-white', 'border-gray-300', 'font-medium', 'text-gray-900');
+  btn.classList.remove('text-gray-500', 'border-transparent');
+}
+</script>
+
+{% endblock %}

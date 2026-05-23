@@ -1,0 +1,11 @@
+{% if not jobs %}
+<p class="text-gray-400 text-sm py-4 text-center">No jobs here yet.</p>
+{% else %}
+<p class="text-xs text-gray-400 mb-2">
+  {{ jobs | length }} job{{ 's' if jobs | length != 1 else '' }}
+</p>
+{% for job in jobs %}
+  {% set current_tab = current_tab %}
+  {% include "partials/job_card.html" %}
+{% endfor %}
+{% endif %}

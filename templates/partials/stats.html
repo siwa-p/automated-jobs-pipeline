@@ -1,0 +1,18 @@
+<div class="flex items-center gap-5 px-4 py-2 bg-white border-b border-gray-200 text-xs overflow-x-auto">
+  {% set items = [
+    ("Total",         stats.get("total", 0)),
+    ("New",           stats.get("new", 0)),
+    ("Shortlist",     stats.get("considering", 0)),
+    ("Applied",       stats.get("applied", 0)),
+    ("Screen",        stats.get("phone_screen", 0)),
+    ("Interview",     stats.get("interview", 0)),
+    ("Offer",         stats.get("offer", 0)),
+    ("Rej/Ghost",     stats.get("rejected", 0) + stats.get("ghosted", 0)),
+  ] %}
+  {% for label, val in items %}
+  <div class="flex-shrink-0">
+    <span class="text-gray-400">{{ label }}</span>
+    <span class="font-semibold text-gray-800 ml-1">{{ val }}</span>
+  </div>
+  {% endfor %}
+</div>
