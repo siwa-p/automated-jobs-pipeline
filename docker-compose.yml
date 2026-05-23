@@ -23,6 +23,8 @@ services:
       - .:/app
       - ./downloads:/app/downloads
     env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/jobs_tracker
     ports:
       - "8000:8000"
     depends_on:
