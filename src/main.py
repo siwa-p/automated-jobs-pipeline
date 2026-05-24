@@ -106,6 +106,68 @@ def get_stats() -> dict:
     return stats
 
 
+def get_analytics_data() -> dict:
+    with engine.connect() as conn:
+        metrics_row = conn.execute(text("""
+            SELECT
+                COUNT(*) FILTER (WHERE status IN ('applied','phone_screen','interview','offer','rejected','ghosted'))
+                    AS total_applied,
+                COUNT(*) FILTER (WHERE status IN ('phone_screen','interview','offer'))
+                    AS got_response,
+                COUNT(*) FILTER (WHERE status = 'offer')
+                    AS offers,
+                ROUND(AVG(CASE
+                    WHEN applied_at IS NOT NULL
+                         AND status IN ('phone_screen','interview','offer','rejected','ghosted')
+                    THEN EXTRACT(EPOCH FROM (updated_at - applied_at)) / 86400.0
+                END)::numeric, 1) AS avg_days_to_response,
+                ROUND(AVG(relevance_score)::numeric, 1) AS avg_score
+            FROM jobs
+        """)).fetchone()
+        metrics = dict(metrics_row._mapping) if metrics_row else {}
+        total_applied = int(metrics.get("total_applied") or 0)
+        got_response = int(metrics.get("got_response") or 0)
+        metrics["total_applied"] = total_applied
+        metrics["got_response"] = got_response
+        metrics["offers"] = int(metrics.get("offers") or 0)
+        metrics["response_rate_pct"] = (
+            round(got_response / total_applied * 100, 1) if total_applied else 0
+        )
+
+        velocity_rows = conn.execute(text("""
+            SELECT
+                TO_CHAR(DATE_TRUNC('week', applied_at), 'Mon DD') AS week_label,
+                DATE_TRUNC('week', applied_at)                    AS week_start,
+                COUNT(*)                                           AS cnt
+            FROM jobs
+            WHERE applied_at IS NOT NULL
+              AND applied_at >= NOW() - INTERVAL '56 days'
+            GROUP BY DATE_TRUNC('week', applied_at)
+            ORDER BY week_start
+        """)).fetchall()
+        velocity = [dict(r._mapping) for r in velocity_rows]
+
+        followup_rows = conn.execute(text("""
+            SELECT
+                id, title, company, applied_at,
+                EXTRACT(DAY FROM (NOW() - applied_at))::int AS days_elapsed,
+                notes
+            FROM jobs
+            WHERE status = 'applied' AND applied_at IS NOT NULL
+            ORDER BY applied_at ASC
+        """)).fetchall()
+        followup = [dict(r._mapping) for r in followup_rows]
+
+    velocity_max = max((r["cnt"] for r in velocity), default=1)
+    return {
+        "metrics": metrics,
+        "velocity": velocity,
+        "velocity_max": int(velocity_max),
+        "followup": followup,
+        "pipeline": get_stats(),
+    }
+
+
 def _tmpl(name: str, req: Request, ctx: dict, headers: dict | None = None) -> HTMLResponse:
     ctx.update({"statuses": STATUSES, "status_emoji": STATUS_EMOJI})
     return templates.TemplateResponse(req, name, ctx, headers=headers)
@@ -253,3 +315,8 @@ async def add_job(
 @app.get("/stats", response_class=HTMLResponse)
 async def stats_fragment(request: Request):
     return _tmpl("partials/stats.html", request, {"stats": get_stats()})
+
+
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics(request: Request):
+    return _tmpl("analytics.html", request, get_analytics_data())

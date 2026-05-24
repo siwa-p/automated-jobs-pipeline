@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+
+  <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center gap-3">
+    <a href="/" class="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 text-sm">
+      💼 Jobs Tracker
+    </a>
+    <span class="text-gray-300 dark:text-gray-600">/</span>
+    <h1 class="text-sm font-semibold text-gray-900 dark:text-gray-100">📊 Analytics</h1>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-8 space-y-6">
+
+    {# ── Metric cards ─────────────────────────────────────────────────────────── #}
+    {% set metric_items = [
+      ("Total Applied",       metrics.total_applied,                           "text-blue-600 dark:text-blue-400"),
+      ("Response Rate",       (metrics.response_rate_pct | string) ~ "%",      "text-green-600 dark:text-green-400"),
+      ("Offers",              metrics.offers,                                   "text-yellow-600 dark:text-yellow-400"),
+      ("Avg Days to Hear",    metrics.avg_days_to_response if metrics.avg_days_to_response else "—", "text-gray-800 dark:text-gray-200"),
+      ("Avg Score",           metrics.avg_score if metrics.avg_score else "—", "text-gray-800 dark:text-gray-200"),
+    ] %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      {% for label, val, val_cls in metric_items %}
+      <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col gap-1">
+        <span class="text-xs text-gray-400 dark:text-gray-500">{{ label }}</span>
+        <span class="text-2xl font-bold {{ val_cls }}">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# ── Pipeline + Velocity row ───────────────────────────────────────────────── #}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      {# Pipeline bar chart #}
+      {% set bar_colors = {
+        "new":          "bg-gray-300 dark:bg-gray-500",
+        "considering":  "bg-yellow-400",
+        "applied":      "bg-blue-500",
+        "phone_screen": "bg-cyan-500",
+        "interview":    "bg-indigo-500",
+        "offer":        "bg-green-500",
+        "rejected":     "bg-red-400",
+        "ghosted":      "bg-gray-400",
+      } %}
+      {% set pipeline_order = ["applied","phone_screen","interview","offer","rejected","ghosted","considering","new"] %}
+      {% set total = pipeline.get("total", 1) or 1 %}
+
+      <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Pipeline</h2>
+        <div class="space-y-2">
+          {% for s in pipeline_order %}
+          {% set cnt = pipeline.get(s, 0) %}
+          {% set pct = (cnt / total * 100) | round(1) %}
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-gray-500 dark:text-gray-400 w-24 flex-shrink-0">
+              {{ status_emoji[s] }} {{ s.replace('_',' ').title() }}
+            </span>
+            <div class="flex-1 h-5 bg-gray-100 dark:bg-gray-700 rounded overflow-hidden">
+              <div class="{{ bar_colors[s] }} h-full rounded transition-all" style="width: {{ pct }}%"></div>
+            </div>
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300 w-5 text-right">{{ cnt }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# Weekly velocity chart #}
+      <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+        <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Applications / Week <span class="font-normal text-gray-400">(last 8 weeks)</span></h2>
+        {% if velocity %}
+        <div class="flex items-end gap-2">
+          {% for week in velocity %}
+          {% set bar_pct = (week.cnt / velocity_max * 100) | round(1) %}
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ week.cnt }}</span>
+            <div class="relative w-full rounded-t bg-gray-100 dark:bg-gray-700" style="height: 96px">
+              <div class="absolute bottom-0 left-0 right-0 bg-blue-500 rounded-t" style="height: {{ bar_pct }}%"></div>
+            </div>
+            <span class="text-xs text-gray-400 dark:text-gray-500 w-full text-center" style="font-size: 0.65rem">{{ week.week_label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400 dark:text-gray-500">No applications recorded yet.</p>
+        {% endif %}
+      </section>
+
+    </div>
+
+    {# ── Follow-up tracker ────────────────────────────────────────────────────── #}
+    <section class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Follow-up Tracker</h2>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">
+        Jobs in "Applied" status with no progression.
+        <span class="inline-flex items-center gap-1 ml-1">
+          <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span> 14+ days
+        </span>
+        <span class="inline-flex items-center gap-1 ml-2">
+          <span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span> 30+ days
+        </span>
+      </p>
+      {% if followup %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left border-collapse">
+          <thead>
+            <tr class="border-b border-gray-200 dark:border-gray-700">
+              <th class="py-2 pr-4 text-gray-400 dark:text-gray-500 font-medium">Role</th>
+              <th class="py-2 pr-4 text-gray-400 dark:text-gray-500 font-medium">Company</th>
+              <th class="py-2 pr-4 text-gray-400 dark:text-gray-500 font-medium">Applied</th>
+              <th class="py-2 pr-4 text-gray-400 dark:text-gray-500 font-medium">Days Waiting</th>
+              <th class="py-2 text-gray-400 dark:text-gray-500 font-medium">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in followup %}
+            {% if row.days_elapsed >= 30 %}
+              {% set row_cls = "bg-red-50 dark:bg-red-900/20" %}
+              {% set badge_cls = "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300" %}
+            {% elif row.days_elapsed >= 14 %}
+              {% set row_cls = "bg-amber-50 dark:bg-amber-900/20" %}
+              {% set badge_cls = "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300" %}
+            {% else %}
+              {% set row_cls = "" %}
+              {% set badge_cls = "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400" %}
+            {% endif %}
+            <tr class="border-b border-gray-100 dark:border-gray-700/50 {{ row_cls }}">
+              <td class="py-2 pr-4 font-medium text-gray-800 dark:text-gray-200">
+                <a href="/?job={{ row.id }}" class="hover:text-blue-600 dark:hover:text-blue-400">{{ row.title }}</a>
+              </td>
+              <td class="py-2 pr-4 text-gray-600 dark:text-gray-400">{{ row.company }}</td>
+              <td class="py-2 pr-4 text-gray-500 dark:text-gray-500">
+                {{ row.applied_at.strftime('%b %d, %Y') if row.applied_at else '—' }}
+              </td>
+              <td class="py-2 pr-4">
+                <span class="px-2 py-0.5 rounded-full font-semibold {{ badge_cls }}">{{ row.days_elapsed }}d</span>
+              </td>
+              <td class="py-2 text-gray-400 dark:text-gray-500 max-w-xs truncate">{{ row.notes or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400 dark:text-gray-500">No pending applications. Nice work staying on top of follow-ups!</p>
+      {% endif %}
+    </section>
+
+  </main>
+</div>
+{% endblock %}
