@@ -20,7 +20,7 @@
         class="w-full accent-blue-600"
         oninput="document.getElementById('score-val').textContent = this.value"
         hx-get="/jobs" hx-target="#job-list" hx-trigger="change"
-        hx-include="#active-tab,#time-window"
+        hx-include="#active-tab,#time-window,#sort-by"
       >
       <span id="score-val" class="text-xs text-gray-500 dark:text-gray-400">0</span>
     </div>
@@ -31,7 +31,7 @@
               class="w-full text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1
                      bg-white dark:bg-gray-700 dark:text-gray-100"
               hx-get="/jobs" hx-target="#job-list" hx-trigger="change"
-              hx-include="#active-tab,#min-score">
+              hx-include="#active-tab,#min-score,#sort-by">
         <option value="">All time</option>
         <option value="2">Last 2 days</option>
         <option value="7">Last 7 days</option>
@@ -40,10 +40,24 @@
       </select>
     </div>
 
+    <div>
+      <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Sort by</label>
+      <select id="sort-by" name="sort_by"
+              class="w-full text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1
+                     bg-white dark:bg-gray-700 dark:text-gray-100"
+              hx-get="/jobs" hx-target="#job-list" hx-trigger="change"
+              hx-include="#active-tab,#min-score,#time-window">
+        <option value="score">Score ↓</option>
+        <option value="date_posted">Date posted ↓</option>
+        <option value="ingested">Date added ↓</option>
+        <option value="company">Company A–Z</option>
+      </select>
+    </div>
+
     <button class="text-xs bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600
                    dark:text-gray-300 rounded py-1 w-full"
             hx-get="/jobs" hx-target="#job-list" hx-trigger="click"
-            hx-include="#active-tab,#min-score,#time-window">
+            hx-include="#active-tab,#min-score,#time-window,#sort-by">
       🔄 Refresh
     </button>
 
@@ -102,7 +116,7 @@
                    dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}"
             hx-get="/jobs?status={{ tab_key }}"
             hx-target="#job-list"
-            hx-include="#min-score,#time-window"
+            hx-include="#min-score,#time-window,#sort-by"
             hx-trigger="click"
             onclick="activateTab('{{ tab_key }}', this)"
           >{{ tab_label }}</button>
@@ -116,7 +130,7 @@
         <div id="job-list"
              class="flex-1 overflow-y-auto p-3 space-y-2"
              hx-get="/jobs" hx-trigger="refreshList from:body"
-             hx-include="#active-tab,#min-score,#time-window">
+             hx-include="#active-tab,#min-score,#time-window,#sort-by">
           {% include "partials/job_list.html" %}
         </div>
       </div>

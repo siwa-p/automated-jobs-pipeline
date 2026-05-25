@@ -52,10 +52,19 @@ def _tab_statuses(tab: str) -> list[str]:
     return ["rejected", "ghosted"] if tab == "archived" else [tab]
 
 
+SORT_OPTIONS = {
+    "score":       "relevance_score DESC NULLS LAST",
+    "date_posted": "date_posted DESC NULLS LAST",
+    "ingested":    "ingested_at DESC",
+    "company":     "company ASC",
+}
+
+
 def get_jobs(
     statuses: list[str] | None = None,
     min_score: float = 0,
     days: int | None = None,
+    sort_by: str = "score",
 ) -> list[dict]:
     clauses = ["1=1"]
     params: dict = {}
@@ -68,13 +77,14 @@ def get_jobs(
     if days:
         clauses.append("ingested_at >= now() - (:days || ' days')::interval")
         params["days"] = days
+    order = SORT_OPTIONS.get(sort_by, SORT_OPTIONS["score"])
     sql = f"""
         SELECT id, title, company, location, date_posted, relevance_score,
                job_url, flagged, entry_level, experience_req,
                status, notes, ingested_at, applied_at
         FROM jobs
         WHERE {" AND ".join(clauses)}
-        ORDER BY relevance_score DESC NULLS LAST
+        ORDER BY {order}
     """
     with engine.connect() as conn:
         result = conn.execute(text(sql), params)
@@ -193,8 +203,14 @@ async def jobs_list(
     status: str = "new",
     min_score: float = 0,
     days: Optional[str] = None,
+    sort_by: str = "score",
 ):
-    jobs = get_jobs(_tab_statuses(status), min_score=min_score, days=int(days) if days else None)
+    jobs = get_jobs(
+        _tab_statuses(status),
+        min_score=min_score,
+        days=int(days) if days else None,
+        sort_by=sort_by,
+    )
     return _tmpl("partials/job_list.html", request, {
         "jobs": jobs,
         "current_tab": status,
