@@ -22,9 +22,12 @@ services:
     volumes:
       - .:/app
       - ./downloads:/app/downloads
+      - app_venv:/app/.venv-app
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/jobs_tracker
+      UV_PROJECT_ENVIRONMENT: /app/.venv-app
+      UV_LINK_MODE: copy
     ports:
       - "8000:8000"
     depends_on:
@@ -41,9 +44,12 @@ services:
     volumes:
       - .:/app
       - ./downloads:/app/downloads
+      - watcher_venv:/app/.venv-watcher
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/jobs_tracker
+      UV_PROJECT_ENVIRONMENT: /app/.venv-watcher
+      UV_LINK_MODE: copy
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,3 +72,5 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  app_venv:
+  watcher_venv:
