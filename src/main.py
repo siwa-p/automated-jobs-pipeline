@@ -1,17 +1,22 @@
 """FastAPI + HTMX jobs tracker."""
 
+import logging
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
 sys.path.insert(0, str(Path(__file__).parent))
-from database import engine, init_db  # noqa: E402
+from database import engine, init_db, prune_old_listings  # noqa: E402
+
+log = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -39,7 +44,16 @@ TAB_DEFS = [
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        lambda: log.info("Pruned %d old listings", prune_old_listings(days=30)),
+        CronTrigger(hour=3, minute=0),
+        id="prune_old_listings",
+        replace_existing=True,
+    )
+    scheduler.start()
     yield
+    scheduler.shutdown(wait=False)
 
 
 app = FastAPI(lifespan=lifespan)

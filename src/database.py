@@ -75,6 +75,23 @@ def init_db() -> None:
         ))
 
 
+ACTIVE_STATUSES = ("applied", "phone_screen", "interview", "offer")
+
+
+def prune_old_listings(days: int = 30) -> int:
+    """Delete listings whose date_posted is older than `days` days, skipping active applications."""
+    with engine.begin() as conn:
+        result = conn.execute(
+            text("""
+                DELETE FROM jobs
+                WHERE date_posted < CURRENT_DATE - (:days || ' days')::interval
+                  AND status NOT IN :protected
+            """),
+            {"days": days, "protected": ACTIVE_STATUSES},
+        )
+        return result.rowcount
+
+
 def bulk_update_status(job_ids: list[int], new_status: str) -> None:
     if not job_ids:
         return
