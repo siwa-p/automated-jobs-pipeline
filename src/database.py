@@ -78,7 +78,7 @@ def init_db() -> None:
 ACTIVE_STATUSES = ("applied", "phone_screen", "interview", "offer")
 
 
-def prune_old_listings(days: int = 30) -> int:
+def prune_old_listings(days: int = 15) -> int:
     """Delete listings whose date_posted is older than `days` days, skipping active applications."""
     with engine.begin() as conn:
         result = conn.execute(
