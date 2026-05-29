@@ -31,11 +31,14 @@ def ingest(csv_path: Path) -> tuple[int, int]:
     df["entry_level"] = df["entry_level"].fillna(False).astype(bool) if "entry_level" in df.columns else False
     exp = df["experience_req"] if "experience_req" in df.columns else pd.Series(dtype=str)
     df["experience_req"] = exp.where(exp.notna(), None)
+    df["llm_rating"] = pd.to_numeric(df["llm_rating"], errors="coerce") if "llm_rating" in df.columns else None
+    llm_reason = df["llm_reason"] if "llm_reason" in df.columns else pd.Series(dtype=str)
+    df["llm_reason"] = llm_reason.where(llm_reason.notna(), None)
     df["source_file"] = csv_path.name
 
     rows = df[["title", "company", "location", "date_posted", "relevance_score",
                "job_url", "description", "flagged", "entry_level", "experience_req",
-               "source_file"]].to_dict("records")
+               "llm_rating", "llm_reason", "source_file"]].to_dict("records")
 
     # convert NaN, NaT, and None → None so psycopg2 writes NULL
     rows = [
@@ -53,16 +56,18 @@ def ingest(csv_path: Path) -> tuple[int, int]:
                     INSERT INTO jobs
                         (title, company, location, date_posted, relevance_score,
                          job_url, description, flagged, entry_level, experience_req,
-                         source_file)
+                         llm_rating, llm_reason, source_file)
                     VALUES
                         (:title, :company, :location, :date_posted, :relevance_score,
                          :job_url, :description, :flagged, :entry_level, :experience_req,
-                         :source_file)
+                         :llm_rating, :llm_reason, :source_file)
                     ON CONFLICT (job_url) DO UPDATE SET
                         relevance_score = EXCLUDED.relevance_score,
                         flagged         = EXCLUDED.flagged,
                         entry_level     = EXCLUDED.entry_level,
-                        experience_req  = EXCLUDED.experience_req
+                        experience_req  = EXCLUDED.experience_req,
+                        llm_rating      = EXCLUDED.llm_rating,
+                        llm_reason      = EXCLUDED.llm_reason
                     RETURNING (xmax = 0) AS is_new
                 """),
                 row,

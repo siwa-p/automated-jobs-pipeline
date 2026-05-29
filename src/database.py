@@ -61,6 +61,12 @@ def init_db() -> None:
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS experience_req TEXT;
         """))
         conn.execute(text("""
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS llm_rating INTEGER;
+        """))
+        conn.execute(text("""
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS llm_reason TEXT;
+        """))
+        conn.execute(text("""
             DO $$ BEGIN
                 CREATE TRIGGER jobs_updated_at
                 BEFORE UPDATE ON jobs

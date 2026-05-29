@@ -1,6 +1,6 @@
 # Jobs Tracker
 
-A Streamlit dashboard that ingests job listings from CSV files and tracks application status in Postgres.
+A FastAPI + HTMX dashboard that ingests job listings from CSV files and tracks application status in Postgres.
 
 ## First-time setup
 
@@ -9,51 +9,31 @@ A Streamlit dashboard that ingests job listings from CSV files and tracks applic
    cp .env.example .env
    ```
 
-2. Start the database services:
+2. Start all services (Postgres, pgAdmin, and the web app):
    ```bash
    docker compose up -d
    ```
 
-3. Install dependencies:
+3. Start the file watcher in a persistent tmux session:
    ```bash
-   pip install uv
-   uv sync
+   tmux new -s watcher
+   uv run python -m src.watcher
+   # Ctrl+B then D to detach
    ```
 
-## Running persistently with tmux
-
-Use tmux so both processes keep running after you disconnect from SSH.
-
-**Terminal 1 — watcher:**
-```bash
-tmux new -s watcher
-uv run python -m src.watcher
-# Ctrl+B then D to detach
-```
-
-**Terminal 2 — Streamlit:**
-```bash
-tmux new -s streamlit
-uv run streamlit run src/app.py --server.address 0.0.0.0
-# Ctrl+B then D to detach
-```
-
-To reattach later:
+To reattach to the watcher later:
 ```bash
 tmux attach -t watcher
-tmux attach -t streamlit
 ```
-
-To see all running sessions: `tmux ls`
 
 ## Accessing the dashboard
 
 From your local machine, open an SSH tunnel:
 ```bash
-ssh -L 8501:localhost:8501 siwa@your-server-ip
+ssh -L 8000:localhost:8000 siwa@your-server-ip
 ```
 
-Then open `http://localhost:8501` in your browser.
+Then open `http://localhost:8000` in your browser.
 
 ## Adding jobs from an email
 
@@ -79,18 +59,18 @@ Required columns:
 |---|---|
 | `title` | job title |
 | `company` | |
-| `location` | optional |
+| `location` | |
 | `date_posted` | any pandas-parseable date |
 | `relevance_score` | 0–100 float |
 | `job_url` | unique key — re-dropping the same file updates scores, not duplicate rows |
 
-Optional columns: `description`, `flagged` (bool), `entry_level` (bool), `experience_req` (text).
+Optional columns: `description`, `flagged` (bool), `entry_level` (bool), `experience_req` (text), `llm_rating` (int 1–9), `llm_reason` (text explanation from LLM).
 
 ## Services
 
 | Service | URL | Credentials |
 |---|---|---|
-| Streamlit dashboard | localhost:8501 | — |
+| Jobs dashboard | localhost:8000 | — |
 | pgAdmin | localhost:5051 | `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD` from `.env` |
 | Postgres | localhost:5432 | `POSTGRES_USER` / `POSTGRES_PASSWORD` from `.env` |
 

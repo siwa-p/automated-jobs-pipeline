@@ -34,6 +34,23 @@ services:
       sh -c "uv sync --frozen &&
              uv run uvicorn src.main:app --host 0.0.0.0 --port 8000"
 
+  watcher:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ./downloads:/app/downloads
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/jobs_tracker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "uv sync --frozen &&
+             uv run python -m src.watcher"
+
   pgadmin:
     image: dpage/pgadmin4
     restart: unless-stopped

@@ -13,11 +13,19 @@
         {{ job.location or "—" }} &middot; posted {{ job.date_posted or "—" }}
       </div>
     </div>
-    <div class="flex-shrink-0 text-right">
-      <div class="text-xs text-gray-400 dark:text-gray-500">Score</div>
-      <div class="font-semibold text-gray-800 dark:text-gray-200">
-        {{ "%.1f" | format(job.relevance_score) if job.relevance_score is not none else "—" }}
+    <div class="flex-shrink-0 text-right flex gap-3">
+      <div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Score</div>
+        <div class="font-semibold text-gray-800 dark:text-gray-200">
+          {{ "%.1f" | format(job.relevance_score) if job.relevance_score is not none else "—" }}
+        </div>
       </div>
+      {% if job.llm_rating is not none %}
+      <div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">LLM</div>
+        <div class="font-semibold text-gray-800 dark:text-gray-200">{{ job.llm_rating }}/9</div>
+      </div>
+      {% endif %}
     </div>
   </div>
 

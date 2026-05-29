@@ -95,7 +95,7 @@ def get_jobs(
     sql = f"""
         SELECT id, title, company, location, date_posted, relevance_score,
                job_url, flagged, entry_level, experience_req,
-               status, notes, ingested_at, applied_at
+               llm_rating, status, notes, ingested_at, applied_at
         FROM jobs
         WHERE {" AND ".join(clauses)}
         ORDER BY {order}
@@ -111,7 +111,7 @@ def get_job(job_id: int) -> dict | None:
             text("""
                 SELECT id, title, company, location, date_posted, relevance_score,
                        job_url, description, flagged, entry_level, experience_req,
-                       status, notes, ingested_at, applied_at
+                       llm_rating, llm_reason, status, notes, ingested_at, applied_at
                 FROM jobs WHERE id = :id
             """),
             {"id": job_id},
